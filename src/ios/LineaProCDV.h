@@ -20,6 +20,6 @@
 - (void)getConnectionStatus:(CDVInvokedUrlCommand*)command;
 - (void)startBarcode:(CDVInvokedUrlCommand*)command;
 - (void)stopBarcode:(CDVInvokedUrlCommand*)command;
-- (void)setScanMode:(CDVInvokedUrlCommand*)command;
+- (void)setScanMode:(CDVInvokedUrlCommand int)command;
 
 @end
