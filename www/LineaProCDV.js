@@ -31,8 +31,8 @@ LineaProCDV.prototype.barcodeStop = function() {
     exec(null, null, "LineaProCDV", "stopBarcode", []);
 };
 
-LineaProCDV.prototype.setScanMode = function(mode) {
-    exec(null, null, "LineaProCDV", "setScanMode", [mode]);
+LineaProCDV.prototype.setBarcodeScanModeDetectMotion = function() {
+    exec(null, null, "LineaProCDV", "setBarcodeScanModeDetectMotion", []);
 };
 
 LineaProCDV.prototype.connectionChanged = function(state) {
