@@ -82,7 +82,8 @@
 
 - (void)setBarcodeScanModeDetectMotion:(CDVInvokedUrlCommand *)command
 {
-    [dtdev barcodeSetScanMode:MODE_MOTION_DETECT];
+    NSError *err = nil;
+    [dtdev barcodeSetScanMode:MODE_MOTION_DETECT error:&err];
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
