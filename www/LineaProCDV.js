@@ -39,6 +39,10 @@ LineaProCDV.prototype.setPassThroughSyncNo = function() {
     exec(null, null, "LineaProCDV", "setPassThroughSyncNo", []);
 };
 
+LineaProCDV.prototype.setUSBChargeCurrent1000 = function() {
+    exec(null, null, "LineaProCDV", "setUSBChargeCurrent1000", []);
+};
+
 LineaProCDV.prototype.connectionChanged = function(state) {
     this.connCallback(state);
 };
