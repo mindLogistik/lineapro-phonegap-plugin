@@ -80,9 +80,9 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void)setScanMode:(CDVInvokedUrlCommand int)command
+- (void)setScanMode:(CDVInvokedUrlCommand *)command
 {
-    [dtdev barcodeSetScanMode:int];
+    [dtdev barcodeSetScanMode:nil];
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
