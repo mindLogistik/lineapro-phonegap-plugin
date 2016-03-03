@@ -88,6 +88,22 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)setPassThroughSyncNo:(CDVInvokedUrlCommand *)command
+{
+    NSError *err = nil;
+    [dtdev setPassThroughSync:NO error:&err];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)setUSBChargeCurrent1000:(CDVInvokedUrlCommand *)command
+{
+    NSError *err = nil;
+    [dtdev setUSBChargeCurrent:1000 error:&err];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void)connectionState: (int)state {
     NSLog(@"connectionState: %d", state);
     
