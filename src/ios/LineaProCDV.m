@@ -80,6 +80,13 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)setScanMode:(CDVInvokedUrlCommand int)command
+{
+    [dtdev barcodeSetScanMode];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void)connectionState: (int)state {
     NSLog(@"connectionState: %d", state);
     
