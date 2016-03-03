@@ -90,7 +90,7 @@
 
 - (void)setPassThroughSyncNo:(CDVInvokedUrlCommand *)command
 {
-	NSError *err = nil;
+    NSError *err = nil;
     [dtdev setPassThroughSync:NO error:&err];
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
