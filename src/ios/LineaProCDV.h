@@ -20,9 +20,6 @@
 - (void)getConnectionStatus:(CDVInvokedUrlCommand*)command;
 - (void)startBarcode:(CDVInvokedUrlCommand*)command;
 - (void)stopBarcode:(CDVInvokedUrlCommand*)command;
-- (void)setBarcodeScanModeDetectMotion:(CDVInvokedUrlCommand*)command;
-- (void)setBarcodeScanModeSingleScan:(CDVInvokedUrlCommand*)command;
-- (void)setPassThroughSyncNo:(CDVInvokedUrlCommand*)command;
-- (void)setUSBChargeCurrent1000:(CDVInvokedUrlCommand*)command;
+- (void)configureMode:(CDVInvokedUrlCommand*)command;
 
 @end

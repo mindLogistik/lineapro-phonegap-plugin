@@ -80,33 +80,11 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (void)setBarcodeScanModeDetectMotion:(CDVInvokedUrlCommand *)command
+- (void)configureMode:(CDVInvokedUrlCommand *)command
 {
     NSError *err = nil;
     [dtdev barcodeSetScanMode:MODE_MOTION_DETECT error:&err];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void)setBarcodeScanModeSingleScan:(CDVInvokedUrlCommand *)command
-{
-    NSError *err = nil;
-    [dtdev barcodeSetScanMode:MODE_SINGLE_SCAN error:&err];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void)setPassThroughSyncNo:(CDVInvokedUrlCommand *)command
-{
-    NSError *err = nil;
     [dtdev setPassThroughSync:NO error:&err];
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void)setUSBChargeCurrent1000:(CDVInvokedUrlCommand *)command
-{
-    NSError *err = nil;
     [dtdev setUSBChargeCurrent:1000 error:&err];
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
