@@ -31,20 +31,8 @@ LineaProCDV.prototype.barcodeStop = function() {
     exec(null, null, "LineaProCDV", "stopBarcode", []);
 };
 
-LineaProCDV.prototype.setBarcodeScanModeDetectMotion = function() {
-    exec(null, null, "LineaProCDV", "setBarcodeScanModeDetectMotion", []);
-};
-
-LineaProCDV.prototype.setBarcodeScanModeSingleScan = function() {
-    exec(null, null, "LineaProCDV", "setBarcodeScanModeSingleScan", []);
-};
-
-LineaProCDV.prototype.setPassThroughSyncNo = function() {
-    exec(null, null, "LineaProCDV", "setPassThroughSyncNo", []);
-};
-
-LineaProCDV.prototype.setUSBChargeCurrent1000 = function() {
-    exec(null, null, "LineaProCDV", "setUSBChargeCurrent1000", []);
+LineaProCDV.prototype.configureMode = function() {
+    exec(null, null, "LineaProCDV", "configureMode", []);
 };
 
 LineaProCDV.prototype.connectionChanged = function(state) {
