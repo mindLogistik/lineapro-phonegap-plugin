@@ -85,7 +85,7 @@
     NSError *err = nil;
     [dtdev barcodeSetScanMode:MODE_MOTION_DETECT error:&err];
     [dtdev setPassThroughSync:NO error:&err];
-    [dtdev setUSBChargeCurrent:1000 error:&err];
+    [dtdev setUSBChargeCurrent:2100 error:&err];
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
