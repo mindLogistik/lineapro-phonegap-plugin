@@ -8,6 +8,13 @@
 
 #import "LineaProCDV.h"
 #import <UIKit/UIKit.h>
+@interface RXBTest : NSObject <UIWebViewDelegate>
+{
+    UIWebView* webView;
+}
+@end
+
+@implementation RXBTest
 
 @interface LineaProCDV()
 
@@ -20,9 +27,7 @@
 -(void) scannerConect:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"reportConnectionStatus('%@');", num];
-    if ([self.webView isKindOfClass:[UIWebView class]]) {
-        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
-    }
+    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
     
 }
 
@@ -37,9 +42,7 @@
         
         // send to web view
         NSString *jsStatement = [NSString stringWithFormat:@"reportBatteryStatus('%@');", status];
-        if ([self.webView isKindOfClass:[UIWebView class]]) {
-            [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
-        }
+        [webView stringByEvaluatingJavaScriptFromString:jsStatement];
         
     }
 }
@@ -47,9 +50,7 @@
 -(void) scanPaymentCard:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"onSuccessScanPaymentCard('%@');", num];
-    if ([self.webView isKindOfClass:[UIWebView class]]) {
-        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
-    }
+    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
     
 }
@@ -112,9 +113,7 @@
 	}
     
     NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.connectionChanged(%d);", state];
-    if ([self.webView isKindOfClass:[UIWebView class]]) {
-        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
-    }
+    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
 }
 
 - (void) deviceButtonPressed: (int) which {
