@@ -8,17 +8,11 @@
 
 #import "LineaProCDV.h"
 #import <UIKit/UIKit.h>
-@interface RXBTest : NSObject <UIWebViewDelegate>
-{
-    UIWebView* webView;
-}
-@end
-
-@implementation RXBTest
 
 @interface LineaProCDV()
 
 + (NSString*) getPDF417ValueByCode: (NSArray*) codesArr code:(NSString*)code;
+UIWebView* webView;
 
 @end
 
