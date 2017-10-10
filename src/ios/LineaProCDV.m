@@ -19,7 +19,9 @@
 -(void) scannerConect:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"reportConnectionStatus('%@');", num];
-    [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
     
 }
 
@@ -34,7 +36,9 @@
         
         // send to web view
         NSString *jsStatement = [NSString stringWithFormat:@"reportBatteryStatus('%@');", status];
-        [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        if ([self.webView isKindOfClass:[UIWebView class]]) {
+            [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        }
         
     }
 }
@@ -42,7 +46,9 @@
 -(void) scanPaymentCard:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"onSuccessScanPaymentCard('%@');", num];
-    [self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
     
 }
@@ -105,7 +111,9 @@
 	}
     
     NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.connectionChanged(%d);", state];
-    [[super webView] stringByEvaluatingJavaScriptFromString:retStr];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
 }
 
 - (void) deviceButtonPressed: (int) which {
