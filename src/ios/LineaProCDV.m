@@ -7,6 +7,7 @@
 //
 
 #import "LineaProCDV.h"
+#import <UIKit/UIKit.h>
 
 @interface LineaProCDV()
 
