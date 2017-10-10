@@ -12,7 +12,6 @@
 @interface LineaProCDV()
 
 + (NSString*) getPDF417ValueByCode: (NSArray*) codesArr code:(NSString*)code;
-UIWebView* webView;
 
 @end
 
@@ -21,7 +20,9 @@ UIWebView* webView;
 -(void) scannerConect:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"reportConnectionStatus('%@');", num];
-    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
     
 }
 
@@ -36,7 +37,9 @@ UIWebView* webView;
         
         // send to web view
         NSString *jsStatement = [NSString stringWithFormat:@"reportBatteryStatus('%@');", status];
-        [webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        if ([self.webView isKindOfClass:[UIWebView class]]) {
+            [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        }
         
     }
 }
@@ -44,7 +47,9 @@ UIWebView* webView;
 -(void) scanPaymentCard:(NSString*)num {
     
     NSString *jsStatement = [NSString stringWithFormat:@"onSuccessScanPaymentCard('%@');", num];
-    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
     
 }
@@ -107,7 +112,9 @@ UIWebView* webView;
 	}
     
     NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.connectionChanged(%d);", state];
-    [webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    if ([self.webView isKindOfClass:[UIWebView class]]) {
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+    }
 }
 
 - (void) deviceButtonPressed: (int) which {
