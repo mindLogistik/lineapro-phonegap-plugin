@@ -113,7 +113,7 @@
     
     NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.connectionChanged(%d);", state];
     if ([self.webView isKindOfClass:[UIWebView class]]) {
-        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
+        [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:retStr];
     }
 }
 
