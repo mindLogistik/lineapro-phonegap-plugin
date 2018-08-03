@@ -63,6 +63,10 @@
 typedef NS_ENUM(int, SUPPORTED_DEVICE_TYPES)
 {
     /**
+     All device types, used when setting active device
+     */
+    DEVICE_TYPE_ALL=-1,
+    /**
      Linea Pro 1,2,3,4,4s, LineaTab
      */
 	DEVICE_TYPE_LINEA=0,
@@ -90,10 +94,74 @@ typedef NS_ENUM(int, SUPPORTED_DEVICE_TYPES)
      Any of the supported HID barcode devices
      */
     DEVICE_TYPE_HID_BARCODE,
+    /**
+     Any of the supported USB magnetic stripe reader devices
+     */
+    DEVICE_TYPE_USB_MSR,
 };
 
 #ifndef IHUB_DEFINED
 #define IHUB_DEFINED
+/**
+ * iHUB RS232 Port Stop Bits
+ */
+typedef NS_ENUM(int, IHUB_RS232_STOPBITS)
+{
+    /**
+     1 stop bit
+     */
+    IHUB_RS232_STOPBITS_1=0x01,
+    /**
+     2 stop bits
+     */
+    IHUB_RS232_STOPBITS_2,
+    /**
+     1.5 stop bits
+     */
+    IHUB_RS232_STOPBITS_15,
+    /**
+     3 stop bits
+     */
+    IHUB_RS232_STOPBITS_3,
+};
+
+/**
+ * iHUB RS232 Port Parity
+ */
+typedef NS_ENUM(int, IHUB_RS232_PARITY)
+{
+    /**
+     Parity: none
+     */
+    IHUB_RS232_PARITY_NONE=0x00,
+    /**
+     Parity: odd
+     */
+    IHUB_RS232_PARITY_ODD,
+    /**
+     Parity: even
+     */
+    IHUB_RS232_PARITY_EVEN,
+};
+
+/**
+ * iHUB RS232 Port Flow Control
+ */
+typedef NS_ENUM(int, IHUB_RS232_FLOW)
+{
+    /**
+     Flow control: none
+     */
+    IHUB_RS232_FLOW_NONE=0x00,
+    /**
+     Flow control: RTS/CTS
+     */
+    IHUB_RS232_FLOW_RTSCTS,
+    /**
+     Flow control: DTR/DSR
+     */
+    IHUB_RS232_FLOW_DTRDSR,
+};
 /**
  * iHUB Port Types
  */
@@ -102,11 +170,11 @@ typedef NS_ENUM(int, IHUB_PORT_TYPE)
     /**
      Port type RS232
      */
-    IHUB_PORT_TYPE_RS232=0x01,
+    IHUB_PORT_TYPE_USB=0x01,
     /**
      Port type USB
      */
-    IHUB_PORT_TYPE_USB=0x02,
+    IHUB_PORT_TYPE_RS232=0x02,
 };
 
 /**
@@ -166,6 +234,32 @@ typedef NS_ENUM(int, IHUB_PORT_STATUS)
 
 @end
 
+@interface iHUBUSBDeviceDescriptor : NSObject
+@property (assign) uint16_t bcdUSB;// 2 BCD USB Specification Number which device complies too.
+
+@property (assign) uint8_t bDeviceClass;// 1 Class Class Code (Assigned by USB Org) If equal to Zero, each interface specifies it’s own class code If equal to 0xFF, the class code is vendor specified. Otherwise field is valid Class Code.
+
+@property (assign) uint8_t bDeviceSubClass;// 1 SubClass Subclass Code (Assigned by USB Org)
+
+@property (assign) uint8_t bDeviceProtocol;// 1 Protocol Protocol Code (Assigned by USB Org)
+
+@property (assign) uint8_t bMaxPacketSize;// 1 Number Maximum Packet Size for Zero Endpoint. Valid Sizes are 8, 16, 32, 64
+
+@property (assign) uint16_t idVendor;// 2 ID Vendor ID (Assigned by USB Org)
+
+@property (assign) uint16_t idProduct;// 2 ID Product ID (Assigned by Manufacturer)
+
+@property (assign) uint16_t bcdDevice;// 2 BCD Device Release Number
+
+@property (copy) NSString *iManufacturer;// 1 Index Index of Manufacturer String Descriptor
+
+@property (copy) NSString *iProduct;// 1 Index Index of Product String Descriptor
+
+@property (copy) NSString *iSerialNumber;// 1 Index Index of Serial Number String Descriptor
+
+@property (assign) uint8_t bNumConfigurations;// 1 Integer Number of Possible Configurations
+@end
+
 /**
  Generic iHUB device class
  */
@@ -193,11 +287,374 @@ typedef NS_ENUM(int, IHUB_PORT_STATUS)
  */
 @property (copy) NSString *portConfig;
 
--(BOOL)writeData:(NSData *)data timeout:(NSTimeInterval)timeout;
+/**
+ Device input stream, See NSInputStream documentation.
+ **/
+@property(readonly) NSInputStream *inputStream;
+
+/**
+ Device output stream, See NSOutputStream documentation.
+ **/
+@property(readonly) NSOutputStream *outputStream;
+
+-(NSData *)readData:(int)maxBytes timeout:(NSTimeInterval)timeout error:(NSError **)error;
+-(int)writeData:(NSData *)data timeout:(NSTimeInterval)timeout error:(NSError **)error;
 
 @end
 
+/**
+ iHUB RS232 device class
+ */
+@interface iHUBRS232Device : iHUBDevice
+
+-(BOOL)setRS232ConfigWithBaud:(int)baud dataBits:(int)dataBits stopBits:(IHUB_RS232_STOPBITS)stopBits parity:(IHUB_RS232_PARITY)parity flowControl:(IHUB_RS232_FLOW)flowControl error:(NSError **)error;
+@end
+
 #endif
+
+
+/**
+ Information about fingerprint scan
+ */
+@interface DTTouchIdentity : NSObject
+/**
+ The slot number where identity is stored inside the device
+ */
+@property (assign) int slot;
+/**
+ Identity data as binary
+ */
+@property (copy) NSData *identityData;
+/**
+ Identity data, represented as string
+ */
+@property (readonly) NSString *identityString;
+@end
+
+/**
+ Information about fingerprint template
+ */
+@interface DTTouchTemplate : NSObject
+/**
+ The template format
+ */
+@property (assign) int format;
+/**
+ Template data as binary
+ */
+@property (copy) NSData *data;
+@end
+
+
+/**
+ * Finger Image-Based Data Interchange Format parser.
+ * <p>
+ * Supported formats:
+ * </p>
+ *
+ * <ul>
+ * <li>ISO/IEC 19794-4-2005</li>
+ * <li>ANSI INCITS 381-2004</li>
+ * </ul>
+ */
+@interface DTTouchFormatAnsiIso : NSObject
+
+/**
+ * Get finger image record data.
+ *
+ * @return the data.
+ */
+-(NSData *)getData;
+
+/**
+ * Get finger image record header data.
+ *
+ * @return the data.
+ */
+-(NSData *)getHeader;
+
+/**
+ * Get finger image record header data as HEX string.
+ *
+ * @return the data.
+ */
+-(NSString *)getHeaderAsHexString;
+
+/**
+ * Get format identifier as String.
+ *
+ * @return format identifier.
+ */
+-(NSString *)getFormatIdentifierAsString;
+
+/**
+ * Get format identifier.
+ * <p>
+ * The Finger Image Record that begin with the three ASCII characters "FIR" to identify the
+ * record as following this standard, followed by a zero byte as a null string terminator.
+ *
+ * @return format identifier.
+ */
+-(NSData *) getFormatIdentifier;
+
+/**
+ * Get version number as String.
+ *
+ * @return version number.
+ */
+-(NSString *) getVersionNumberAsString;
+
+/**
+ * Get version number.
+ * <p>
+ * The version number for the version of this standard used in construction the image record
+ * placed in four bytes. This version number consist of three ASCII numerals followed by a zero
+ * byte as a NULL string terminator. The first and second character will represent the major
+ * version number and the third character will represent the minor revision number. Upon
+ * approval of this specification, the version number is “010” – Version 1 revision.
+ *
+ * @return version number.
+ */
+-(NSData *) getVersionNumber;
+
+/**
+ * Get record length.
+ * <p>
+ * The length in bytes of the entire record that includes the combined lengths of all finger
+ * records.
+ *
+ * @return record length.
+ */
+-(int) getRecordLength;
+
+/**
+ * Get product identifier.
+ * <p>
+ * This field specify the 'owner' of the encoding equipment.
+ * <p>
+ * Available only with ANSI INCITS 381-2004.
+ *
+ * @return product identifier.
+ */
+-(NSData *) getProductIdentifier;
+
+/**
+ * Get product identifier as HEX string.
+ * <p>
+ * This field specify the 'owner' of the encoding equipment.
+ * <p>
+ * Available only with ANSI INCITS 381-2004.
+ *
+ * @return product identifier.
+ */
+-(NSString *) getProductIdentifierAsHexString;
+
+/**
+ * Get capture device ID.
+ * <p>
+ * This field specify the capture device ID recorded. A value of all zeros will be acceptable
+ * and will indicated that the capture device ID is unreported. The vendor determines the value
+ * for this field. Applications developers may obtain the values for these codes from the
+ * vendor.
+ *
+ * @return capture device id.
+ */
+-(NSData *) getCaptureDeviceID;
+
+/**
+ * Get capture device ID as HEX String.
+ * <p>
+ * The capture device ID recorded in two bytes. A value of all zeros will be acceptable and will
+ * indicated that the capture device ID is unreported. The vendor determines the value for this
+ * field. Applications developers may obtain the values for these codes from the vendor.
+ *
+ * @return capture device id.
+ */
+-(NSString *) getCaptureDeviceIDAsHexString;
+
+/**
+ * Get acquisition level.
+ * <p>
+ * This field specify the image acquisition level. The value used indicates the level at which
+ * all of the minimum acquisition parameters were satisfied during the capture of image.
+ *
+ * @return acquisition level.
+ */
+-(int) getImageAsquisionLevel;
+
+/**
+ * Get number of finger/palm.
+ * <p>
+ * The number of finger or palm images included in the record. Multiple fingers acquired by a
+ * single capture and contained in the same image are counted as a single finger image. The
+ * number of views are not part of the count for this view.
+ *
+ * @return number of finger/palm.
+ */
+-(int) getNumberOfFingers;
+
+/**
+ * Get scale units.
+ * <p>
+ * This field specify the units used to describe the scanning and image resolutions of the
+ * image. A '0x01' in this fields indicates pixel per inch, or the '0x02' indicates pixel per
+ * centimeter.
+ *
+ * @return scale units.
+ */
+-(int) getScaleUnits;
+
+/**
+ * Get scan resolution (horizontal).
+ * <p>
+ * This field specify the rounded scanning resolution used in the horizontal direction. The
+ * scale units field determine whether the value is pixel per inch or pixel per centimeter.
+ *
+ * @return scan resolution.
+ */
+-(int) getScanResolutionHorz;
+
+/**
+ * Get scan resolution (vertical).
+ * <p>
+ * This field specify the rounded scanning resolution used in the vertical direction. The scale
+ * units field determine whether the value is pixel per inch or pixel per centimeter.
+ *
+ * @return scan resolution.
+ */
+-(int) getScanResolutionVert;
+
+/**
+ * Get image resolution (horizontal).
+ * <p>
+ * This field specify the rounded image resolution used in the horizontal direction. The scale
+ * units field determine whether the value is pixel per inch or pixel per centimeter.
+ *
+ * @return image resolution.
+ */
+-(int) getImageResolutionHorz;
+
+/**
+ * Get image resolution (vertical).
+ * <p>
+ * This field specify the rounded image resolution used in the vertical direction. The scale
+ * units field determine whether the value is pixel per inch or pixel per centimeter.
+ *
+ * @return image resolution.
+ */
+-(int) getImageResolutionVert;
+
+/**
+ * Get pixel depth.
+ *
+ * This field contains a number of bits used to represent pixel. The value can be from '0x01' to
+ * '0x10'.
+ *
+ * @return pixel depth.
+ */
+-(int) getPixelDepth;
+
+/**
+ * Get compression algorithm.
+ *
+ * Specify the method used to record the uncompressed or compressed grayscale images.
+ *
+ * <table border="1" summary="">
+ * <tr>
+ * <td>Code</td>
+ * <td>Compression algorithm</td>
+ * </tr>
+ * <tr>
+ * <td>0</td>
+ * <td>Uncompressed - no bit packing</td>
+ * </tr>
+ * <tr>
+ * <td>1</td>
+ * <td>Uncompressed - bit packing</td>
+ * </tr>
+ * <tr>
+ * <td>2</td>
+ * <td>Compressed - WSQ</td>
+ * </tr>
+ * <tr>
+ * <td>3</td>
+ * <td>Compressed - JPEG</td>
+ * </tr>
+ * <tr>
+ * <td>4</td>
+ * <td>Compressed - JPEG 2000</td>
+ * </tr>
+ * <tr>
+ * <td>5</td>
+ * <td>Compressed - PNG</td>
+ * </tr>
+ * </table>
+ *
+ * @return compression algorithm.
+ */
+-(int) getImageCompressionAlgorithm;
+
+/**
+ * Get finger data block length.
+ * <p>
+ * This field contains the length in bytes of finger segment. It specify the total number of
+ * bytes including the length of the header and the size of compressed or uncompressed image
+ * data.
+ *
+ * @return length.
+ */
+-(int) getFingerDataBlockLengt;
+
+/**
+ * Get finger position.
+ *
+ * @return finger position.
+ */
+-(int) getFingerPosition;
+
+/**
+ * Get count of views.
+ * <p>
+ * This field contains the total number of specific views available for this finger.
+ *
+ * @return count of views.
+ */
+-(int) getCountOfViews;
+
+/**
+ * Get view number.
+ * <p>
+ * This field contains the specific image view number associate with the finger or palm.
+ *
+ * @return view number.
+ */
+-(int) getViewNumber;
+
+/**
+ * Get finger/palm image quality.
+ *
+ * @return finger/palm image quality.
+ */
+-(int) getFingerImageQuality;
+
+/**
+ * Get impression type.
+ *
+ * @return impression type.
+ */
+-(int) getImpressionType;
+
+/**
+ * Get horizontal line length (image width).
+ * <p>
+ * This field is used to specify the number of pixels contained on a single horizontal line of
+ * the transmitted image.
+ *
+ * @return horizontal line length.
+ */
+-(int) getHorizontalLineLength;
+@end
+
 
 /**
  Information about financial card
@@ -511,6 +968,8 @@ typedef NS_ENUM(int, BLUETOOTH_FILTER)
 	BLUETOOTH_FILTER_BARCODE_SCANNERS=4,
 };
 
+#ifndef DSCAN_MODES
+#define DSCAN_MODES
 /**
  Barcode scan modes
  */
@@ -519,24 +978,25 @@ typedef NS_ENUM(int, SCAN_MODES)
     /**
      The scan will be terminated after successful barcode recognition (default)
      */
-	MODE_SINGLE_SCAN=0,
+    MODE_SINGLE_SCAN=0,
     /**
      Scanning will continue unless either scan button is releasd, or stop scan function is called
      */
-	MODE_MULTI_SCAN,
+    MODE_MULTI_SCAN,
     /**
      For as long as scan button is pressed or stop scan is not called the engine will operate in low power scan mode trying to detect objects entering the area, then will turn on the lights and try to read the barcode. Supported only on Code engine.
      */
-	MODE_MOTION_DETECT,
+    MODE_MOTION_DETECT,
     /**
      Pressing the button/start scan will enter aim mode, while a barcode scan will actually be performed upon button release/stop scan.
      */
-	MODE_SINGLE_SCAN_RELEASE,
+    MODE_SINGLE_SCAN_RELEASE,
     /**
      Same as multi scan mode, but allowing no duplicate barcodes to be scanned
      */
-	MODE_MULTI_SCAN_NO_DUPLICATES,
+    MODE_MULTI_SCAN_NO_DUPLICATES,
 };
+#endif //SCAN_MODES
 
 /**
  Button modes
@@ -657,6 +1117,8 @@ typedef NS_ENUM(int, EMV2_INTERFACES)
     EMV_INTERFACE_MAGNETIC_MANUAL=8,
 };
 
+#ifndef DBARCODE_TYPES
+#define DBARCODE_TYPES
 /**
  The way to return barcode types
  */
@@ -665,16 +1127,17 @@ typedef NS_ENUM(int, BARCODE_TYPES)
     /**
      Barcode types are returned from the BAR_* list (default)
      */
-	BARCODE_TYPE_DEFAULT=0,
+    BARCODE_TYPE_DEFAULT=0,
     /**
      Barcode types are returned from the extended barcode list - BAR_EX_*
      */
-	BARCODE_TYPE_EXTENDED,
+    BARCODE_TYPE_EXTENDED,
     /**
      Barcode types are returned as ISO 15424 format
      */
     BARCODE_TYPE_ISO15424
 };
+#endif //DBARCODE_TYPES
 
 /**
  Firmware update phases
@@ -977,13 +1440,24 @@ typedef NS_ENUM(int, UPDATE_PHASES)
 #define ALG_TRANSARMOR   13
 
 /**
- Pinpad DUKPT format, containing for each track:
- - track identifier (1 byte) - 1 for T1, 2 for T2, 3 for T3, 5 for JIS2
- - track length (2 bytes)
- - encrypted track data with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ Pinpad DUKPT format, consisting of one or more blocks of data. Each block has a header of [ID] [LENHI] [LENLO]. Based on ID:
+ - 00: KSN (10 bytes)
+ - 01: Track 1 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ - 02: Track 2 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ - 03: Track 3 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
  */
 #define ALG_PPAD_DUKPT_SEPARATE_TRACKS   14
 
+/**
+ Pinpad DUKPT format, consisting of one or more blocks of data. Each block has a header of [ID] [LENHI] [LENLO]. Based on ID:
+ - 00: KSN (10 bytes)
+ - 01: Track 1 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ - 02: Track 2 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ - 03: Track 3 (variable) encrypted with DUKPT key, padded with zeroes (0x00), CBC with zero for IV
+ */
+#define ALG_TRANSARMOR_DUKPT   15
+
+#define ALG_RSA_OEAP_SHA256   16
 
 /**@}*/
 
@@ -1257,9 +1731,9 @@ typedef NS_ENUM(int, RF_CARD_TYPES)
      */
 	CARD_ST_SRI,
     /**
-     NFC Payment
+     NFC Payment type A
      */
-	CARD_PAYMENT,
+	CARD_PAYMENT_A,
     /**
      PicoPass 15693
      */
@@ -1272,6 +1746,10 @@ typedef NS_ENUM(int, RF_CARD_TYPES)
      E-Passport NFC
      */
     CARD_EPASSPORT,
+    /**
+     NFC Payment type B
+     */
+    CARD_PAYMENT_B,
 };
 
 /**
@@ -1365,6 +1843,10 @@ typedef NS_ENUM(int, FELICA_SMARTTAG_DRAW_MODES)
  Paper present
  */
 @property (assign) BOOL paperPresent;
+/**
+ Auto-off time in seconds
+ */
+@property (assign) NSTimeInterval autoOffTime;
 @end
 #endif
 
@@ -1493,6 +1975,14 @@ typedef NS_ENUM(int, FEATURES)
      */
     FEAT_USB_HUB,
     /**
+     GUI Display, one of the DISPLAY_* constants
+     */
+    FEAT_DISPLAY,
+    /**
+     Support of TouchID sensor
+     */
+    FEAT_TOUCHID,
+    /**
      Last feature
      */
     FEAT_MAX
@@ -1520,6 +2010,29 @@ typedef NS_ENUM(int, FEAT_PRINT_PROTOCOLS)
      Zebra ZPL protocol, zpl* commands
      */
     PRINT_PROTOCOL_ZPL=2,
+};
+
+/**
+ Display types
+ */
+typedef NS_ENUM(int, FEAT_DISPLAYS)
+{
+    /**
+     Unknown display
+     */
+    DISPLAY_UNKNOWN = 1,
+    /**
+     Color display, 320x240 dots
+     */
+    DISPLAY_COLOR_320X240,
+    /**
+     Black&White display, 320x240 dots
+     */
+    DISPLAY_BW_320X240,
+    /**
+     Black&White display, 128x32 dots
+     */
+    DISPLAY_BW_128X32,
 };
 
 /**
@@ -1593,6 +2106,11 @@ typedef NS_ENUM(int, FEAT_BLUETOOTH_TYPES)
      Bluetooth module can accept incoming connections
      */
     BLUETOOTH_HOST=2,
+};
+
+typedef NS_ENUM(int, LOYALTY_ID)
+{
+    LOYALTY_ID_LUFTHANSA=1,
 };
 
 
@@ -2036,54 +2554,67 @@ typedef NS_ENUM(int, LANGUAGES)
 typedef NS_ENUM(int, PROMPTS)
 {
     /**
-     Emter amount
+     Enter amount
      */
     PROMPT_ENTER_AMOUNT,
     /**
-     Emter discount
+     Enter discount
      */
     PROMPT_ENTER_DISCOUNT,
     /**
-     Emter tip %
+     Enter tip %
      */
     PROMPT_ENTER_TIP,
     /**
-     Emter tip amount
+     Enter tip amount
      */
     PROMPT_ENTER_TIP_AMOUNT,
     /**
-     Emter phone number
+     Enter phone number
      */
     PROMPT_ENTER_PHONE,
     /**
-     Emter cell phone number
+     Enter cell phone number
      */
     PROMPT_ENTER_CELL_PHONE,
     /**
-     Emter zip code
+     Enter zip code
      */
     PROMPT_ENTER_ZIP,
     /**
-     Emter social security number
+     Enter social security numberF
      */
     PROMPT_ENTER_SSN,
     /**
-     Emter id
+     Enter id
      */
     PROMPT_ENTER_ID,
     /**
-     Emter date of birth
+     Enter date of birth
      */
     PROMPT_ENTER_BIRTH_DATE,
     /**
-     Emter driver's license
+     Enter driver's license
      */
     PROMPT_ENTER_DRIVER_LICENCE,
     /**
-     Emter customer id
+     Enter customer id
      */
     PROMPT_ENTER_CUSTOMER_ID,
+    /**
+     Enter cell number
+     */
+    PROMPT_ENTER_CELL_NUMBER,
+    /**
+     Enter cell number for receipt
+     */
+    PROMPT_ENTER_CELL_NUMBER_FOR_RECEIPT,
+    /**
+     Enter cell number for text message
+     */
+    PROMPT_ENTER_FOR_TEXT_MSG_RECEIPT_CELL_NUMBER,
 };
+
 
 /**
  Specific codepages, that can be used with uiDrawText function
@@ -2157,6 +2688,14 @@ typedef NS_ENUM(int, FONTS)
      6x10 pixels japanese font
      */
     FONT_6X10_JPN,
+    /**
+     UNKNOWN pixels japanese font
+     */
+    FONT_UNKNOWN_JPN,
+    /**
+     24x24 pixels japanese font
+     */
+    FONT_24X24_JPN,
 };
 
 /**
@@ -2558,11 +3097,11 @@ typedef NS_ENUM(int, FONTS)
 /**
  Device type
  */
-@property(assign) SUPPORTED_DEVICE_TYPES deviceType;
+@property(nonatomic, assign) SUPPORTED_DEVICE_TYPES deviceType;
 /*
  Device connection type
  */
-@property(assign) DEVICE_CONNECTION_TYPE connectionType;
+@property(nonatomic, assign) DEVICE_CONNECTION_TYPE connectionType;
 /**
  Returns connected device name
  **/
@@ -2992,6 +3531,13 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 -(NSString *)bluetoothDevicePINCodeRequired:(NSString *)address name:(NSString *)name;
 
 /**
+ Notification sent when a bluetooth device requests confirmation of a passkey
+ @param address bluetooth address of the device
+ @param passKey the generated passkey
+ **/
+-(void)bluetoothDevicePassKeySent:(NSString *)address passKey:(NSString *)passKey;
+
+/**
  Notification sent when JIS I & II magnetic card is successfuly read
  @param data - data contained in the magnetic card
  **/
@@ -3074,6 +3620,14 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @param data TLV list
  */
 -(void)emv2OnOnlineProcessing:(NSData *)data;
+
+
+/**
+ Notification sent when Apple VAS card was successfully processed. Data consists of all the VAS data, wrapped inside one or more 0xE8 tags
+ @param result VAS processing result
+ @param data TLV list
+ */
+-(void)emv2OnAppleVASProcessedWithResult:(int)result data:(NSData *)data;
 
 /**
  Notification sent when the transaction is complete. Data consists of all the tags available, including plain text ones for display purposes and encrypted for sending over to the backend
@@ -3184,7 +3738,7 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @param type device type, one of DEVICE_TYPE_* constants
  @return true if the accessory is either connected or physically attached
  */
--(BOOL)isPresent:(int)type;
+-(BOOL)isPresent:(SUPPORTED_DEVICE_TYPES)type;
 
 /**
  The sdk can work with many devices at the same time, but some functions can be executed on a single device at a time (for example barcodeStartScan), this function sets the prefered device to execute the function by type.
@@ -3192,7 +3746,7 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return TRUE if function succeeded, FALSE otherwise
  */
--(BOOL)setActiveDeviceType:(int)type error:(NSError **)error;
+-(BOOL)setActiveDeviceType:(SUPPORTED_DEVICE_TYPES)type error:(NSError **)error;
 
 /**
  Sets the time in seconds, after which Linea will shut down to conserve battery. This works with lightning connector Lineas only (LP5, LPTab4, LPTabMini)
@@ -3234,6 +3788,14 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 -(DTBatteryInfo *)getBatteryInfo:(NSError **)error;
 
 /**
+ Returns complete information about a connected device's battery
+ @param device connected device type to query the info for
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return battery information if function succeeded, nil otherwise
+ */
+-(DTBatteryInfo *)getConnectedDeviceBatteryInfo:(SUPPORTED_DEVICE_TYPES)device error:(NSError **)error;
+
+/**
  On Infinea X, 2 battery capacities are supported, this function allows you to set the currently used battery capacity in order to receive correct battery info.
  @note calling this function resets the battery info and it needs few cycles in order to return correct information, so this function should be called from service menu or similar
  @param capacity battery capacity in mA/h
@@ -3241,6 +3803,22 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @return battery information if function succeeded, nil otherwise
  */
 -(BOOL)setBatteryMaxCapacity:(int)capacity error:(NSError **)error;
+
+/**
+ Switches between high and low current charging mode for internal battery. Available in Linea7 only, it can be useful if you charge the linea off weak-powered usb ports
+ @param lowCurrent if true, low current mode is used
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)setInternalBatteryChargeCurrentMode:(BOOL)lowCurrent error:(NSError **)error;
+
+/**
+ Returns current charging mode for internal battery. Available in Linea7 only, it can be useful if you charge the linea off weak-powered usb ports
+ @param lowCurrent if true, low current mode is enabled
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)getInternalBatteryChargeCurrentMode:(BOOL *)lowCurrent error:(NSError **)error;
 
 /**
  Returns an array of connected devices to the sdk
@@ -3423,6 +4001,13 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 -(BOOL)sysIsDevelopmentUnit;
 
 /**
+ Sets a specific battery level below which the device emits a charge needed warning. This works only if there is no active connection to the device, when a program is connected, it can present the warning the best possible way. Currently supported by pinpads only.
+ @param percent battery percentage treshold or 0 to disable functionality
+ @return TRUE if function succeeded, FALSE otherwise
+ **/
+-(BOOL)sysSetBatteryWarningLevelPercent:(int)percent error:(NSError **)error;
+
+/**
  Returns current device date/time
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return date/time or nil if error occured
@@ -3497,6 +4082,53 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @return TRUE if function succeeded, FALSE otherwise
  */
 -(BOOL)msSetCardDataMode:(int)mode error:(NSError **)error;
+
+/**
+ Send card data to be encrypted and returned via the currently selected encryption algorithm
+ @param track1 MS Track 1 data or nil if unavailable
+ @param track2 MS Track 2 data or nil if unavailable
+ @param track3 MS Track 3 data or nil if unavailable
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)msSimulateCardDataTrack1:(NSString *)track1 track2:(NSString *)track2 track3:(NSString *)track3 error:(NSError **)error;
+
+/**
+ Retrieves loyalty card data, if the last swiped magnetic card was a recognized loyalty one
+ @param loyaltyID loyalty identifier, one of the LOYALTY_ID_* constants
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return loyalty data or nil if function failed
+ */
+-(NSString *)msGetLoyaltyDataForID:(int)loyaltyID error:(NSError **)error;
+
+/**
+ Needed Structure:
+ *     F0
+ *         C0    -    pan min length
+ *         C1    -    pan max length
+ *     F1
+ *         C0    -    BIN. If C0 is available, but C1 is missing, it means that it is BIN mask.
+ *         C1    -    BIN. If both C0 and C1 are available, it means that there is interval between BINs. C0 - minimum, C1 - maximum.
+ *         C2    -    plain?
+ *                     0: plain
+ *                     1: encrypted
+ *         C3    -    masked - start, end, after. It should be exactly 3 bytes length!
+ *
+ *         -------- MANUAL ENTRY --------
+ *         C4    -    exp. date prompt?
+ *                     0: no
+ *                     1: yes
+ *         C5    -    CVV prompt?
+ *                     0: no
+ *                     1: yes
+ *         C6     -    max length of the CVV. It is being used only if C5 has value 1.
+ *         C7     -    CVV Label. It is being used only if C5 has value 1.
+ @param data RSA2048 PCKS1.5 encrypted block containing SHA256 of the bin ranges + bin ranges data in ASCII or BCD
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)msSetBINRangesEx:(NSData *)data error:(NSError **)error;
+
 /**@}*/
 
 
@@ -3700,6 +4332,14 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 
 -(BOOL)barcodeMotorolaSetParam:(int)param value:(NSData *)value permanent:(BOOL)permanent error:(NSError **)error;
 -(NSString *)barcodeMotorolaGetVersion:(NSError **)error;
+
+/**
+ Performs firmware update on motoroala/zebra barcode engines. Barcode update can take very long time, it is best to call this function from a thread and update the user interface when firmwareUpdateProgress delegate is called
+ @param firmwareData firmware file data to load
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)barcodeMotorolaUpdateFirmware:(NSData *)firmwareData error:(NSError **)error;
 
 /**
  Allows for a custom initialization string to be sent to the Intermec barcode engine. The data is sent directly, if the barcode is currently powered on, and every time it gets initialized. The setting does not persists, so it is best this command is called upon new connection.
@@ -3941,6 +4581,15 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 -(BOOL)btSetDataNotificationMaxTime:(double)maxTime maxLength:(int)maxLength sequenceData:(NSData *)sequenceData error:(NSError **)error;
 
 /**
+ Sets initialization data for the bluetooth module. For BT301/401 (pinpads) These are AT commands separated by 0x00, for example @"AT+WRNAME=MYNAME\r\n\0AT+WRNAME=MYOTHERNAME\r\n\0"
+ This data is persistent, you can send it multiple times and only if it is changed will result in restarting and reinit of the bluetooth module. The init data will also be set after master reset so it will persist.
+ @param data bluetooth module specific initialization data or empty array for deleting init data
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)btSetInitData:(NSData *)data error:(NSError **)error;
+
+/**
  Initiates/kills listen for incoming bluetooth connections. Incoming connecton requests will be sent as delegate notifications
  @note this function cannot be called once connection to remote device was established
  @param enabled if YES the bluetooth module will listen for incoming connections, NO disables this functionality
@@ -3960,12 +4609,21 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  */
 -(NSString *)btGetLocalAddress:(NSError **)error;
 
+/**
+ Confirms a passkey request sent upon connection
+ @note Call this function only right after receiving passkey event
+ @param success the result of passkey comparison, sending true will result in connection being established, false will break it
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)btConfirmPassKey:(BOOL)success error:(NSError **)error;
+
 -(BOOL)btFirmwareUpdate:(NSData *)firmware additionalData:(NSData *)additionalData error:(NSError **)error;
 
 -(NSString *)btGetFirmwareVersion:(NSError **)error;
 
 #ifdef BTLE_USED
--(NSArray<CBUUID *> *)btleDiscoverSupportedDevices:(int)filter stopOnFound:(BOOL)stopOnFound error:(NSError **)error;
+-(NSArray<CBPeripheral *> *)btleDiscoverSupportedDevices:(int)filter stopOnFound:(BOOL)stopOnFound error:(NSError **)error;
 -(BOOL)btleDiscoverStop;
 -(BOOL)btleConnectToDevice:(CBPeripheral *)aPeripheral error:(NSError **)error;
 -(BOOL)btleDisconnect:(CBPeripheral *)aPeripheral error:(NSError **)error;
@@ -4337,7 +4995,7 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  - C - starts new range of cards to be rejected
  - 1-6 numbers - range BIN, it is auto completed with 0 to 6
  - A - define ending range
- <br>An examples:
+<br>An examples:
  - B000000A1111111E - BIN ranges 000000-1111111 will be sent in plain
  - B100001E - cards starting with 1000001 will be sent in plain
  - C999999E - cards starting with 999999 will be rejected
@@ -4525,7 +5183,13 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 /**
  Selects the prefered encryption algorithm. When card is swiped, it will be encrypted by it and sent via magneticCardEncryptedData delegate
  @param encryption encryption algorhtm used, one o fthe ALG_* constants
- @param params optional algorithm parameters, currently no algorithm supports these
+ @param params optional algorithm parameters.
+ <br>IDTECH/MAGTEK/ALG_PPAD_DUKPT_SEPARATE_TRACKS:
+ - includeSentinels: (bool) Allows to enable/disable sentienls in the track data
+
+ <br>ALG_PPAD_3DES_CBC/ALG_PPAD_DUKPT:
+ - uniqueID: (UInt32) An ID that will be stored inside the packet and returned back encrypted. Never use same ID, either autoincrement or random value. If not set, random value will be used
+
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return TRUE if function succeeded, FALSE otherwise
  */
@@ -4535,7 +5199,13 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  Selects the prefered encryption algorithm. When card is swiped, it will be encrypted by it and sent via magneticCardEncryptedData delegate
  @param encryption encryption algorhtm used, one o fthe ALG_* constants
  @param keyID the ID of the key to use, one of the KEY_* constants. The key needs to be suitable for the provided algorithm.
- @param params optional algorithm parameters, currently no algorithm supports these
+ @param params optional algorithm parameters.
+ <br>IDTECH/MAGTEK:
+ - includeSentinels: (bool) Allows to enable/disable sentienls in the track data
+
+ <br>ALG_PPAD_3DES_CBC/ALG_PPAD_DUKPT:
+ - uniqueID: (UInt32) An ID that will be stored inside the packet and returned back encrypted. Never use same ID, either autoincrement or random value. If not set, random value will be used
+ 
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return TRUE if function succeeded, FALSE otherwise
  */
@@ -5707,7 +6377,7 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
 -(NSData *)ppadCrypto3DESCBCDecryptKeyID:(int)keyID initVector:(NSData *)initVector inData:(NSData *)inData error:(NSError **)error;
 
 /**
- Generate 3DES CBC MAK.
+ Generate 3DES CBC MAC.
  @param mode MAC mode
  <table>
  <tr><td>MAC_MODE1</td><td>key for ISO 9797-1 MAC Algorithm 1</td></tr>
@@ -5721,6 +6391,21 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  @return MAC data
  **/
 -(NSData *)ppadCrypto3DESCBCMACWithMode:(int)mode keyID:(int)keyID initVector:(NSData *)initVector keyVariant:(NSData *)keyVariant inData:(NSData *)inData error:(NSError **)error;
+
+/**
+ Generate DUKPT CBC MAC using last generated dukpt key
+ @param mode MAC mode
+ <table>
+ <tr><td>MAC_MODE1</td><td>key for ISO 9797-1 MAC Algorithm 1</td></tr>
+ <tr><td>MAC_MODE3</td><td>key for ISO 9797-1 MAC Algorithm 3</td></tr>
+ <tr><td>MAC_MODEB</td><td>key for ISO 16609 MAC algorithm 1</td></tr>
+ </table>
+ @param initVector - initialization vector (8 bytes)
+ @param keyVariant - key variant, XOR-ed with key value (16 bytes)
+ @param inData - input data buffer
+ @return MAC data
+ **/
+-(NSData *)ppadCryptoDUKPTMACWithMode:(int)mode initVector:(NSData *)initVector keyVariant:(NSData *)keyVariant inData:(NSData *)inData error:(NSError **)error;
 
 /**
  Deletes already loaded 3DES key
@@ -5878,6 +6563,10 @@ typedef NS_ENUM(int, SCREEN_COLOR_MODES)
  EMV Transaction result: The card cannot be processed due to configuration error in the kernel
  */
 #define EMV_RESULT_END_APPLICATION 0x0000
+/**
+ EMV Transaction result: Try again
+ */
+#define EMV_RESULT_LOYALTY_COMPLETE 0x1100
 
 /**
  CVM result: Online PIN
@@ -6173,6 +6862,17 @@ typedef NS_ENUM(int, EMV_CL_CARD_SCHEME)
 -(BOOL)emv2StartTransactionOnInterface:(int)interfaces flags:(int)flags initData:(NSData *)initData timeout:(NSTimeInterval)timeout error:(NSError **)error;
 /**
  Starts EMV transaction. The function waits for payment card to be available, then processes it and notifies of completion. You can cancel the transaction at any time.
+ @param interfaces transaction interface like contactless/contact or magnetic. One of hte EMV_INTERFACE_* constants, only works on universal EMV kernel
+ @param flags controls the EMV transaction, use 0 for now
+ @param initData optional TLV structure with additional parameters to be sent to the kernel
+ @param configuration configuration index to use, 0 means the default one
+ @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
+ @param timeout transaction timeout in seconds, only works on universal EMV kernel
+ @return TRUE if function succeeded, FALSE otherwise
+ */
+-(BOOL)emv2StartTransactionOnInterface:(int)interfaces flags:(int)flags initData:(NSData *)initData usingConfiguration:(int)configuration timeout:(NSTimeInterval)timeout error:(NSError **)error;
+/**
+ Starts EMV transaction. The function waits for payment card to be available, then processes it and notifies of completion. You can cancel the transaction at any time.
  @param flags controls the EMV transaction, use 0 for now
  @param initData optional TLV structure with additional parameters to be sent to the kernel
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
@@ -6240,7 +6940,7 @@ typedef NS_ENUM(int, EMV_CL_CARD_SCHEME)
 -(NSData *)emv2GetTagsEncrypted:(NSData *)tagList format:(int)format keyType:(int)keyType keyIndex:(int)keyIndex packetID:(uint32_t)packetID error:(NSError **)error;
 
 /**
- After transaction is finished, you can get the tags in plain. Only non-sensitive tags can be retrieved in plain, no pan/discretionary data will be returned
+ After transaction is finished, you can get the tags in plain. Only non-sensitive tags can be retrieved in plain, no pan/discretionary data will be returned. If the card is in the whitelist bin ranges to return in clear, you can get that card's tags in clear
  @param tagList a list of tags to get. The format is like TLV list without length and value, i.e. every tag takes as many bytes as needed
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return plain TLV data if function succeeded, nil otherwise
@@ -6299,7 +6999,7 @@ typedef NS_ENUM(int, EMV_CL_CARD_SCHEME)
  Performs complete EMV transaction but returns magnetic card data as if card was swiped. The result goes to either magneticCardData(if plain), magneticCardEncryptedData(encrypted) or magneticCardReadFailed if operation failed. The function waits for payment card to be available, then processes it and notifies of completion. You can cancel the transaction at any time. The algorithm used to encrypt the card data and the key are set via emsrSetEncryption function
  @param interfaces transaction interface like contactless/contact or magnetic. One of hte EMV_INTERFACE_* constants, only works on universal EMV kernel
  @param initData optional TLV structure with additional parameters to be sent to the kernel
- @param usingConfiguration configuration index to use, 0 means the default one
+ @param configuration configuration index to use, 0 means the default one
  @param timeout transaction timeout in seconds, only works on universal EMV kernel
  @param error pointer to NSError object, where error information is stored in case function fails. You can pass nil if you don't want that information
  @return TRUE if function succeeded, FALSE otherwise
@@ -8567,6 +9267,15 @@ typedef NS_ENUM(int, TAG_TYPES)
 #define CHANNEL_ZPL			50
 
 /**
+ Configures some settings needed by the sdk to operate with unknown ESC/POS printer
+ @param width page width in pixels
+ @param lines the number of lines(in pixels) to feed so the paper can be torn out without cutting the data
+ @param error returns error information, you can pass nil if you don't want it
+ @return TRUE upon success, FALSE otherwise
+ */
+-(BOOL)prnSetGenericPrinterSettingsPageWidth:(int)width feedLines:(int)lines error:(NSError **)error;
+
+/**
  Returns information about the connected printer
  @param error returns error information, you can pass nil if you don't want it
  @return printer information object or nil if error occured
@@ -9135,7 +9844,11 @@ typedef NS_ENUM(int, TAG_TYPES)
 /**
  Empty configuration, use when you want to manually control the device
  */
-extern NSString * const kPortConfigNone;
+extern NSString *kPortConfigNone;
+/**
+ Port is used as charging station only
+ */
+extern NSString *kPortConfigUSBCharge;
 /**
  Linea 4 and older 30-pin lineas, supported by the universal sdk
  */
@@ -9144,6 +9857,10 @@ extern NSString *kPortConfigLineaOldUSBSER;
  Linea 5, 6, mini and all lightning connector lineas, supported by the universal sdk
  */
 extern NSString *kPortConfigLineaUSBSER;
+/**
+ Linea with USB port access
+ */
+extern NSString *kPortConfigLineaUSB;
 /**
  All pinpads set as usb device, connected via normal mini-usb cable, supported by the universal sdk
  */
@@ -9157,6 +9874,10 @@ extern NSString *kPortConfigPinpadUSBSER;
  */
 extern NSString *kPortConfigPrinterESCPOSUSB;
 /**
+ All esc/pos printers set as RS232 device, connected via serial cable, supported by the universal sdk
+ */
+extern NSString *kPortConfigPrinterESCPOSSerial;
+/**
  All new fiscal printers (FMP-350 and later) set as usb device, connected via normal usb cable, supported by the fiscal sdk
  */
 extern NSString *kPortConfigPrinterFiscalUSB;
@@ -9164,8 +9885,29 @@ extern NSString *kPortConfigPrinterFiscalUSB;
  All old fiscal printers set as usb device, connected via normal usb cable, supported by the fiscal sdk
  */
 extern NSString *kPortConfigPrinterFiscalOldUSB;
+/**
+ HID barcode, supported by universal sdk
+ */
+extern NSString *kPortConfigBarcodeHID;
+/**
+ USB barcode, providing usb to serial capability, supported by universal sdk
+ */
+extern NSString *kPortConfigBarcodeUSB;
+/**
+ Serial port barcode, supported by universal sdk
+ */
+extern NSString *kPortConfigBarcodeSerial;
+/**
+ HID magnetic stripe reader, needs to be set up as keyboard emulation, supported by universal sdk
+ */
+extern NSString *kPortConfigMSRHID;
+extern NSString *kPortConfigMagtekMSR;
 
 
+extern NSString *kPortConfigPrinterGenericESCPOSUSB;
+extern NSString *kPortConfigPrinterGenericESCPOSSerial;
+
+-(iHUBDevice *)iHUBGetDeviceFormPort:(int)port error:(NSError **)error;
 
 /**
  Returns information about available ports on iHUB.
@@ -9182,7 +9924,111 @@ extern NSString *kPortConfigPrinterFiscalOldUSB;
  @return TRUE upon success, FALSE otherwise
  */
 -(BOOL)iHUBSetPortConfig:(NSString *)config forPort:(int)forPort error:(NSError **)error;
+
+/**
+ Enables/disables some of the usb ports to act like charging station only. No try to connect on this port will be made
+ @param charge usb charge mode
+ @param forPort slave port number
+ @param error returns error information, you can pass nil if you don't want it
+ @return TRUE upon success, FALSE otherwise
+ */
+-(BOOL)iHUBSetUSBCharge:(BOOL)charge forPort:(int)forPort error:(NSError **)error;
+
+/**
+ Sets the maximum charging current given to the connected iOS device
+ @param current - maximum current, up to 2400mA
+ @param error returns error information, you can pass nil if you don't want it
+ @return TRUE upon success, FALSE otherwise
+ */
+-(BOOL)iHUBSetAppleChargingCurrent:(int)current error:(NSError **)error;
+
+/**
+ Returns current maximum charging current given to the connected iOS device
+ @param current - maximum current, up to 2400mA
+ @param error returns error information, you can pass nil if you don't want it
+ @return TRUE upon success, FALSE otherwise
+ */
+-(BOOL)iHUBGetAppleChargingCurrent:(int *)current error:(NSError **)error;
 /**@}*/
+
+
+/** @defgroup G_TOUCH TouchID Functions
+ Functions to scan fingerprints and
+ @ingroup G_IHUB
+ @{
+ */
+
+/**
+ Image sizes supported by the touchid fingerprint reader
+ */
+typedef NS_ENUM(int, TOUCH_IMAGE_SIZE)
+{
+    /**
+     * The image size is 192x270 pixels.
+     */
+    TOUCH_IMAGE_SIZE_SMALL = 0,
+    /**
+     * The image size is 256x360 pixels.
+     */
+    TOUCH_IMAGE_SIZE_LARGE = 1
+};
+
+/**
+ Image formats supported by the touchid fingerprint reader
+ */
+typedef NS_ENUM(int, TOUCH_IMAGE_FORMAT)
+{
+    /**
+     * The image is in ANSI format.
+     */
+    TOUCH_IMAGE_FORMAT_ANSI = 0,
+    /**
+     * The image is in ISO format.
+     */
+    TOUCH_IMAGE_FORMAT_ISO = 1
+};
+
+/**
+ Image compressions supported by the touchid fingerprint reader
+ */
+typedef NS_ENUM(int, TOUCH_IMAGE_COMPRESSION)
+{
+    /**
+     * The image compression type.
+     */
+    TOUCH_IMAGE_COMPRESSION_NONE = 0
+};
+
+/**
+ Template formats supported by the touchid fingerprint reader
+ */
+typedef NS_ENUM(int, TOUCH_TEMPLATE_FORMAT)
+{
+    /**
+     * Template in NATIVE (AuthenTec legacy) format.
+     */
+    TOUCH_TEMPLATE_FORMAT_NATIVE = 0,
+
+    /**
+     *  Template in ANSI (ANSI INCITS 378-2004) format.
+     */
+    TOUCH_TEMPLATE_FORMAT_ANSI = 1,
+
+    /**
+     *  Template in ISO_FMR (ISO/IEC 19794-2-2005) format
+     */
+    TOUCH_TEMPLATE_FORMAT_ISO_FMR = 2,
+
+    /**
+     * Template in ISO_FMC_N (ISO/IEC 19794-2-2005) card format.
+     */
+    TOUCH_TEMPLATE_FORMAT_ISO_FMC_N = 3,
+
+    /**
+     * Template in ISO_FMC_C (ISO/IEC 19794-2-2005) card format.
+     */
+    TOUCH_TEMPLATE_FORMAT_ISO_FMC_C = 4
+};
 
 
 /**
@@ -9193,8 +10039,12 @@ extern NSString *kPortConfigPrinterFiscalOldUSB;
 /**
  Provides a list of currently registered delegates
  */
-@property(readonly) NSMutableArray *delegates;
+@property(readonly) NSArray<id> *delegates;
 
+/**
+ Returns current connection type
+ */
+@property(readonly) SUPPORTED_DEVICE_TYPES deviceType;
 /**
  Returns current connection type
  **/
