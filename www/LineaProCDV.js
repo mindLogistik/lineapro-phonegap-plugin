@@ -8,17 +8,17 @@ var argscheck = require('cordova/argscheck'),
     this.results = [];
     this.connCallback = null;
     this.errorCallback = null;
-    this.cancelCallback = null;
     this.cardDataCallback = null;
     this.barcodeCallback = null;
-    
+    this.buttonPressCallback = null;
 }
 
-LineaProCDV.prototype.initDT = function(connectionCallback, cardCallback, barcCallback, cancelCallback, errorCallback) {
+LineaProCDV.prototype.initDT = function(connectionCallback, cardCallback, barcCallback, buttonPressCallback, errorCallback) {
     this.results = [];
     this.connCallback = connectionCallback;
     this.cardDataCallback = cardCallback;
     this.barcodeCallback = barcCallback;
+    this.buttonPressCallback = buttonPressCallback;
     exec(null, errorCallback, "LineaProCDV", "initDT", []);
     //alert("LineaProCDV");
 };
@@ -62,5 +62,18 @@ LineaProCDV.prototype.onBarcodeData = function(rawCodesArr, scanId, dob, state, 
                };
     this.barcodeCallback(data);
 };
+
+LineaProCDV.prototype.playSound = function(volume, beepDataArray) {
+    exec(null, null, "LineaProCDV", "playSound", [parseInt(volume), beepDataArray || []]);
+};
+
+LineaProCDV.prototype.barcodeSetScanBeep = function(enabled, volume, beepDataArray) {
+    exec(null, null, "LineaProCDV", "barcodeSetScanBeep", [(enabled === true), parseInt(volume), beepDataArray || []]);
+};
+
+LineaProCDV.prototype.onDeviceButtonPressed = function(which) {
+    this.buttonPressCallback({which: which});
+};
+
 
 module.exports = new LineaProCDV();

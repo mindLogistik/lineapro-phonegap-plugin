@@ -21,5 +21,7 @@
 - (void)startBarcode:(CDVInvokedUrlCommand*)command;
 - (void)stopBarcode:(CDVInvokedUrlCommand*)command;
 - (void)configureMode:(CDVInvokedUrlCommand*)command;
+- (void)playSound:(CDVInvokedUrlCommand*)command;
+- (void)barcodeSetScanBeep:(CDVInvokedUrlCommand*)command;
 
 @end

@@ -18,52 +18,52 @@
 @implementation LineaProCDV
 
 -(void) scannerConect:(NSString*)num {
-    
+
     NSString *jsStatement = [NSString stringWithFormat:@"reportConnectionStatus('%@');", num];
     if ([self.webView isKindOfClass:[UIWebView class]]) {
         [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
     }
-    
+
 }
 
 -(void) scannerBattery:(NSString*)num {
-    
+
     int percent;
     float voltage;
-    
+
 	if([dtdev getBatteryCapacity:&percent voltage:&voltage error:nil])
     {
         NSString *status = [NSString stringWithFormat:@"Bat: %.2fv, %d%%",voltage,percent];
-        
+
         // send to web view
         NSString *jsStatement = [NSString stringWithFormat:@"reportBatteryStatus('%@');", status];
         if ([self.webView isKindOfClass:[UIWebView class]]) {
             [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
         }
-        
+
     }
 }
 
 -(void) scanPaymentCard:(NSString*)num {
-    
+
     NSString *jsStatement = [NSString stringWithFormat:@"onSuccessScanPaymentCard('%@');", num];
     if ([self.webView isKindOfClass:[UIWebView class]]) {
         [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:jsStatement];
     }
 	[self.viewController dismissViewControllerAnimated:YES completion:nil];
-    
+
 }
 
 - (void)initDT:(CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    
+
     if (!dtdev) {
         dtdev = [DTDevices sharedDevice];
         [dtdev addDelegate:self];
         [dtdev connect];
     }
-    
+
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -97,9 +97,56 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)playSound:(CDVInvokedUrlCommand*)command
+{
+    int volume = [[command.arguments objectAtIndex:0] intValue];
+    NSArray *beepTone = [command.arguments objectAtIndex:1];
+
+    unsigned long count = [beepTone count];
+    unsigned long bytesLength = sizeof(int) * count;
+    int *beepToneArr = malloc(bytesLength);
+    for (int i = 0; i < count; i++)
+    {
+        beepToneArr[i] = [[beepTone objectAtIndex:i] intValue];
+    }
+
+    NSError *err = nil;
+
+    [dtdev playSound:volume beepData:beepToneArr length:bytesLength error:&err];
+
+    free(beepToneArr);
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
+- (void)barcodeSetScanBeep:(CDVInvokedUrlCommand*)command
+{
+    BOOL enabled = [[command argumentAtIndex:0] boolValue];
+    int volume = [[command.arguments objectAtIndex:1] intValue];
+    NSArray *beepTone = [command.arguments objectAtIndex:2];
+
+    unsigned long count = [beepTone count];
+    unsigned long bytesLength = sizeof(int) * count;
+    int *beepToneArr = malloc(bytesLength);
+    for (int i = 0; i < count; i++)
+    {
+        beepToneArr[i] = [[beepTone objectAtIndex:i] intValue];
+    }
+
+    NSError *err = nil;
+
+    [dtdev barcodeSetScanBeep:enabled volume:volume beepData:beepToneArr length:bytesLength error:&err];
+
+    free(beepToneArr);
+
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void)connectionState: (int)state {
     NSLog(@"connectionState: %d", state);
-    
+
     switch (state) {
 		case CONN_DISCONNECTED:
 		case CONN_CONNECTING:
@@ -110,7 +157,7 @@
 			break;
 		}
 	}
-    
+
     NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.connectionChanged(%d);", state];
     if ([self.webView isKindOfClass:[UIWebView class]]) {
         [(UIWebView*)self.webView stringByEvaluatingJavaScriptFromString:retStr];
@@ -119,6 +166,8 @@
 
 - (void) deviceButtonPressed: (int) which {
     NSLog(@"deviceButtonPressed: %d", which);
+    NSString* retStr = [ NSString stringWithFormat:@"LineaProCDV.onDeviceButtonPressed(%d);", which];
+    [[super webView] stringByEvaluatingJavaScriptFromString:retStr];
 }
 
 - (void) deviceButtonReleased: (int) which {
@@ -258,7 +307,7 @@
     NSString* substrLicense = @"DAQ";
     NSString* license = [LineaProCDV getPDF417ValueByCode:codesArr code: substrLicense];
     NSLog(@"%@ %@ %@ %@ %@ %@ %@ %@ %@ %@ %@ %@", dateBirth, name, lastName, eye, state, city, height, weight, gender, hair, expires, license);
-    
+
     NSString* rawCodesArrJSString = [LineaProCDV generateStringForArrayEvaluationInJS:codesArr];
     //LineaProCDV.onBarcodeData(scanId, dob, state, city, expires, gender, height, weight, hair, eye)
     NSString* retStr = [ NSString stringWithFormat:@"var rawCodesArr = %@; LineaProCDV.onBarcodeData(rawCodesArr, '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@', '%@');", rawCodesArrJSString, license, dateBirth, state, city, expires, gender, height, weight, hair, eye, name, lastName];
