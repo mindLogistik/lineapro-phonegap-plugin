@@ -4,12 +4,12 @@
     xmlns:rim="http://www.blackberry.com/ns/widgets"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="com.citronium.lineaprocdv.v2"
-    version="0.1">
+    version="0.2">
     <name>LineaProCDV</name>
     <description>LineaProCDV</description>
     <license>MIT</license>
     <keywords>lineapro,citronium</keywords>
-    <repo>https://github.com/ttatarinov/lineapro-phonegap-plugin.git</repo>
+    <repo>https://github.com/peitschie/lineapro-phonegap-plugin.git</repo>
     <issue></issue>
 
     <js-module src="www/LineaProCDV.js" name="LineaProCDV">
