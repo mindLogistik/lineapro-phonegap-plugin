@@ -87,6 +87,15 @@
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
+- (void)barcodeEnableButtonScanMode:(CDVInvokedUrlCommand *)command
+{
+    NSError *err = nil;
+    int buttonMode = [[command argumentAtIndex:0] boolValue] == YES ? BUTTON_ENABLED : BUTTON_DISABLED;
+    [dtdev barcodeSetScanButtonMode:buttonMode error:&err];
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsInt:[dtdev connstate]];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
+
 - (void)configureMode:(CDVInvokedUrlCommand *)command
 {
     NSError *err = nil;

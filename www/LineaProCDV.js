@@ -75,5 +75,9 @@ LineaProCDV.prototype.onDeviceButtonPressed = function(which) {
     this.buttonPressCallback({which: which});
 };
 
+LineaProCDV.prototype.barcodeEnableButtonScanMode = function(enabled) {
+    exec(null, null, "LineaProCDV", "barcodeEnableButtonScanMode", [(enabled === true)]);
+};
+
 
 module.exports = new LineaProCDV();
