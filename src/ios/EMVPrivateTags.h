@@ -25,6 +25,12 @@
 
 /*
  * Format: b
+ * Length: 4
+ */
+#define TAG_D2_CARD_READ_OPTIONS 0xD2
+
+/*
+ * Format: b
  * Length: 3
  */
 #define TAG_C4_MASKED_DATA_CONFIG 0xC4
